@@ -1,0 +1,89 @@
+﻿@page "{id:int}"
+@model InventoryManagement.Pages.Suppliers.DeleteModel
+@{
+    ViewData["Title"] = "Delete Supplier";
+}
+
+<div class="page-header">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb small mb-1">
+                <li class="breadcrumb-item"><a asp-page="Index">Suppliers</a></li>
+                <li class="breadcrumb-item active">Delete</li>
+            </ol>
+        </nav>
+        <h1>Delete Supplier</h1>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+
+        @if (Model.ProductCount > 0)
+        {
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4 text-center">
+                    <div class="rounded-circle bg-warning bg-opacity-10 d-inline-flex align-items-center
+                        justify-content-center mb-3" style="width:64px;height:64px">
+                        <i class="bi bi-exclamation-triangle text-warning fs-3"></i>
+                    </div>
+                    <h5 class="fw-bold mb-1">Cannot delete "@Model.Supplier.Name"</h5>
+                    <p class="text-muted small mb-0">
+                        This supplier has <strong>@Model.ProductCount product@(Model.ProductCount == 1 ? "" : "s")</strong> assigned.
+                        Reassign or remove those products before deleting this supplier.
+                    </p>
+                </div>
+                <div class="card-body border-top d-flex gap-2 justify-content-center pt-3 pb-4">
+                    <a asp-page="/ProductPages/Index" asp-route-supplierId="@Model.Supplier.Id"
+                       class="btn btn-primary">
+                        <i class="bi bi-box-seam me-1"></i> View Products
+                    </a>
+                    <a asp-page="Index" class="btn btn-outline-secondary">Back</a>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4 text-center">
+                    <div class="rounded-circle bg-danger bg-opacity-10 d-inline-flex align-items-center
+                        justify-content-center mb-3" style="width:64px;height:64px">
+                        <i class="bi bi-trash text-danger fs-3"></i>
+                    </div>
+                    <h5 class="fw-bold mb-1">Delete "@Model.Supplier.Name"?</h5>
+                    <p class="text-muted small mb-0">
+                        This supplier has no products assigned. It will be permanently removed.
+                    </p>
+                </div>
+
+                <div class="card-body border-top border-bottom bg-light py-3 px-4 small">
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <span class="text-muted d-block">Email</span>
+                            <strong>@(Model.Supplier.Email ?? "—")</strong>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted d-block">Phone</span>
+                            <strong>@(Model.Supplier.Phone ?? "—")</strong>
+                        </div>
+                        <div class="col-12">
+                            <span class="text-muted d-block">Address</span>
+                            <strong>@(Model.Supplier.Address ?? "—")</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body p-4 d-flex gap-2 justify-content-center">
+                    <form method="post">
+                        <input type="hidden" asp-for="Supplier.Id" />
+                        <button type="submit" class="btn btn-danger px-4">
+                            <i class="bi bi-trash me-1"></i> Yes, delete it
+                        </button>
+                    </form>
+                    <a asp-page="Index" class="btn btn-outline-secondary px-4">Cancel</a>
+                </div>
+            </div>
+        }
+
+    </div>
+</div>

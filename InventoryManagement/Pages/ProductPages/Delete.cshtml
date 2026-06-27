@@ -1,0 +1,73 @@
+@page "{id:int}"
+@model InventoryManagement.Pages.ProductPages.DeleteModel
+
+@{
+    ViewData["Title"] = "Delete Product";
+}
+
+<div class="page-header">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb small mb-1">
+                <li class="breadcrumb-item"><a asp-page="Index">Products</a></li>
+                <li class="breadcrumb-item">
+                    <a asp-page="Details" asp-route-id="@Model.Product.Id">@Model.Product.Name</a>
+                </li>
+                <li class="breadcrumb-item active">Delete</li>
+            </ol>
+        </nav>
+        <h1>Delete Product</h1>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4 text-center">
+                <div class="rounded-circle bg-danger bg-opacity-10 d-inline-flex align-items-center
+                    justify-content-center mb-3" style="width:64px;height:64px">
+                    <i class="bi bi-trash text-danger fs-3"></i>
+                </div>
+                <h5 class="fw-bold mb-1">Delete "@Model.Product.Name"?</h5>
+                <p class="text-muted small mb-0">
+                    This will permanently remove the product and all
+                    <strong>@Model.TransactionCount stock transaction(s)</strong> linked to it.
+                    This cannot be undone.
+                </p>
+            </div>
+
+            <!-- Product summary -->
+            <div class="card-body border-top border-bottom bg-light py-3 px-4 small">
+                <div class="row g-2">
+                    <div class="col-6">
+                        <span class="text-muted d-block">SKU</span>
+                        <strong>@(Model.Product.SKU ?? "—")</strong>
+                    </div>
+                    <div class="col-6">
+                        <span class="text-muted d-block">Category</span>
+                        <strong>@Model.Product.Category.Name</strong>
+                    </div>
+                    <div class="col-6">
+                        <span class="text-muted d-block">Stock</span>
+                        <strong>@Model.Product.StockQuantity units</strong>
+                    </div>
+                    <div class="col-6">
+                        <span class="text-muted d-block">Price</span>
+                        <strong>@Model.Product.Price.ToString("C")</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-body p-4 d-flex gap-2 justify-content-center">
+                <form method="post">
+                    <input type="hidden" asp-for="Product.Id" />
+                    <button type="submit" class="btn btn-danger px-4">
+                        <i class="bi bi-trash me-1"></i> Yes, delete it
+                    </button>
+                </form>
+                <a asp-page="Details" asp-route-id="@Model.Product.Id"
+                   class="btn btn-outline-secondary px-4">Cancel</a>
+            </div>
+        </div>
+    </div>
+</div>

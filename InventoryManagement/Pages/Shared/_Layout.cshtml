@@ -1,0 +1,383 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] — Inventory Manager</title>
+
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+
+    <style>
+            :root {
+                --sidebar-width: 240px;
+                --sidebar-bg: #1a1f2e;
+                --sidebar-hover: #2a3147;
+                --sidebar-active: #0d6efd;
+                --sidebar-text: #a8b2c8;
+                --sidebar-text-active: #ffffff;
+                --topbar-height: 56px;
+            }
+
+            /* ── Sidebar ── */
+            #sidebar {
+                width: var(--sidebar-width);
+                min-height: 100vh;
+                background: var(--sidebar-bg);
+                position: fixed;
+                top: 0;
+                left: 0;
+                z-index: 1030;
+                display: flex;
+                flex-direction: column;
+                transition: transform 0.25s ease;
+            }
+
+            .sidebar-brand {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 18px 20px;
+                border-bottom: 1px solid rgba(255,255,255,.07);
+                text-decoration: none;
+            }
+            .sidebar-brand-icon {
+                width: 34px;
+                height: 34px;
+                background: var(--sidebar-active);
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+            }
+            .sidebar-brand-text {
+                color: #fff;
+                font-weight: 700;
+                font-size: .92rem;
+                letter-spacing: .02em;
+                line-height: 1.2;
+            }
+            .sidebar-brand-text small {
+                display: block;
+                color: var(--sidebar-text);
+                font-weight: 400;
+                font-size: .72rem;
+            }
+
+            .sidebar-section-label {
+                font-size: .68rem;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: .1em;
+                color: rgba(168,178,200,.45);
+                padding: 20px 20px 6px;
+            }
+
+            .sidebar-nav {
+                padding: 0 10px;
+                flex: 1;
+            }
+            .sidebar-link {
+                display: flex;
+                align-items: center;
+                gap: 11px;
+                padding: 9px 12px;
+                border-radius: 7px;
+                color: var(--sidebar-text);
+                text-decoration: none;
+                font-size: .88rem;
+                font-weight: 500;
+                margin-bottom: 2px;
+                transition: background .15s, color .15s;
+            }
+            .sidebar-link i {
+                font-size: 1.05rem;
+                width: 20px;
+                text-align: center;
+                flex-shrink: 0;
+            }
+            .sidebar-link:hover {
+                background: var(--sidebar-hover);
+                color: #fff;
+            }
+            .sidebar-link.active {
+                background: var(--sidebar-active);
+                color: var(--sidebar-text-active);
+            }
+
+            .sidebar-footer {
+                padding: 14px 20px;
+                border-top: 1px solid rgba(255,255,255,.07);
+                font-size: .78rem;
+                color: rgba(168,178,200,.5);
+            }
+
+            /* ── Topbar ── */
+            #topbar {
+                height: var(--topbar-height);
+                background: #fff;
+                border-bottom: 1px solid #e9ecef;
+                position: fixed;
+                top: 0;
+                left: var(--sidebar-width);
+                right: 0;
+                z-index: 1020;
+                display: flex;
+                align-items: center;
+                padding: 0 24px;
+                gap: 14px;
+            }
+
+            #topbar .page-title {
+                font-size: 1rem;
+                font-weight: 600;
+                color: #1a1f2e;
+                flex: 1;
+            }
+
+            /* ── Main content ── */
+            #main-content {
+                margin-left: var(--sidebar-width);
+                margin-top: var(--topbar-height);
+                padding: 28px 28px 40px;
+                min-height: calc(100vh - var(--topbar-height));
+                background: #f5f6fa;
+            }
+
+            /* ── Mobile toggle ── */
+            @@media (max-width: 767.98px) {
+                #sidebar {
+                    transform: translateX(-100%);
+                }
+
+                    #sidebar.show {
+                        transform: translateX(0);
+                    }
+
+                #topbar {
+                    left: 0;
+                }
+
+                #main-content {
+                    margin-left: 0;
+                }
+
+                #sidebar-overlay {
+                    display: none;
+                    position: fixed;
+                    inset: 0;
+                    background: rgba(0,0,0,.4);
+                    z-index: 1025;
+                }
+
+                    #sidebar-overlay.show {
+                        display: block;
+                    }
+            }
+
+            /* ── Utility ── */
+            .badge-dot {
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                display: inline-block;
+                margin-right: 4px;
+            }
+
+            /* Page header used on inner pages */
+            .page-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 24px;
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+            .page-header h1 {
+                font-size: 1.4rem;
+                font-weight: 700;
+                color: #1a1f2e;
+                margin: 0;
+            }
+    </style>
+
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+
+    <!-- ── Sidebar overlay (mobile) ── -->
+    <div id="sidebar-overlay"></div>
+
+    <!-- ── Sidebar ── -->
+    <nav id="sidebar">
+        <!-- Brand -->
+        <a class="sidebar-brand" asp-page="/Dashboard">
+            <div class="sidebar-brand-icon">
+                <i class="bi bi-boxes text-white fs-5"></i>
+            </div>
+            <div class="sidebar-brand-text">
+                InvenTrack
+                <small>Inventory Manager</small>
+            </div>
+        </a>
+
+        <!-- Nav links -->
+        <div class="sidebar-nav mt-2">
+
+            <div class="sidebar-section-label">Overview</div>
+            <a class="sidebar-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Dashboard" ? "active" : "")"
+               asp-page="/Dashboard">
+                <i class="bi bi-speedometer2"></i> Dashboard
+            </a>
+
+            <div class="sidebar-section-label">Inventory</div>
+            <a class="sidebar-link @(ViewContext.RouteData.Values["page"]?.ToString()?.StartsWith("Products") == true ? "active" : "")"
+               asp-page="/ProductPages/Index">
+                <i class="bi bi-box-seam"></i> Products
+            </a>
+            <a class="sidebar-link @(ViewContext.RouteData.Values["page"]?.ToString()?.StartsWith("/Categories") == true ? "active" : "")"
+               asp-page="/Categories/Index">
+                <i class="bi bi-tags"></i> Categories
+            </a>
+            <a class="sidebar-link @(ViewContext.RouteData.Values["page"]?.ToString()?.StartsWith("/Suppliers") == true ? "active" : "")"
+               asp-page="/Suppliers/Index">
+                <i class="bi bi-truck"></i> Suppliers
+            </a>
+
+            <div class="sidebar-section-label">Activity</div>
+            <a class="sidebar-link @(ViewContext.RouteData.Values["page"]?.ToString()?.StartsWith("/Transactions") == true ? "active" : "")"
+               asp-page="/Transactions/Index">
+                <i class="bi bi-arrow-left-right"></i> Stock Transactions
+            </a>
+            <a class="sidebar-link @(ViewContext.RouteData.Values["page"]?.ToString()?.StartsWith("/Reports") == true ? "active" : "")"
+               asp-page="/Reports/Index">
+                <i class="bi bi-bar-chart-line"></i> Reports
+            </a>
+
+            <div class="sidebar-section-label">System</div>
+            <a class="sidebar-link @(ViewContext.RouteData.Values["page"]?.ToString()?.StartsWith("/Settings") == true ? "active" : "")"
+               asp-page="/Settings/Index">
+                <i class="bi bi-gear"></i> Settings
+            </a>
+
+        </div>
+
+        <div class="sidebar-footer">
+            &copy; @DateTime.Now.Year InvenTrack
+        </div>
+    </nav>
+
+    <!-- ── Topbar ── -->
+    <header id="topbar">
+        <!-- Mobile hamburger -->
+        <button class="btn btn-sm btn-light d-md-none me-2 border-0" id="sidebarToggle" aria-label="Toggle sidebar">
+            <i class="bi bi-list fs-5"></i>
+        </button>
+
+        <span class="page-title">@ViewData["Title"]</span>
+
+        <!-- Search -->
+        <form class="d-none d-md-flex align-items-center" method="get" asp-page="/Products/Index">
+            <div class="input-group input-group-sm" style="width:220px">
+                <input type="search" name="search" class="form-control border-0 bg-light"
+                       placeholder="Search products…" autocomplete="off" />
+                <button class="btn btn-light border-0" type="submit">
+                    <i class="bi bi-search text-muted"></i>
+                </button>
+            </div>
+        </form>
+
+        <!-- Low stock badge -->
+        <a asp-page="/Dashboard" class="btn btn-sm btn-outline-warning position-relative d-none d-sm-inline-flex align-items-center gap-1">
+            <i class="bi bi-exclamation-triangle"></i>
+            <span>Low Stock</span>
+            @if (ViewData["LowStockCount"] is int count && count > 0)
+            {
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                      style="font-size:.6rem">@count</span>
+            }
+        </a>
+
+        <!-- Avatar / user menu -->
+        <div class="dropdown">
+            <button class="btn btn-sm btn-light border-0 d-flex align-items-center gap-2"
+                    data-bs-toggle="dropdown" aria-expanded="false">
+                <div style="width:30px;height:30px;border-radius:50%;background:#0d6efd;
+                    display:flex;align-items:center;justify-content:center;">
+                    <i class="bi bi-person-fill text-white" style="font-size:.85rem"></i>
+                </div>
+                <span class="d-none d-md-inline small fw-semibold text-dark">Admin</span>
+                <i class="bi bi-chevron-down text-muted" style="font-size:.65rem"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 mt-1">
+                <li><a class="dropdown-item small" asp-page="/Admin/Profile"><i class="bi bi-person me-2"></i>Profile</a></li>
+                <li><a class="dropdown-item small" asp-page="/Settings/Index"><i class="bi bi-gear me-2"></i>Settings</a></li>
+                <li><hr class="dropdown-divider my-1"></li>
+                <li><a class="dropdown-item small text-danger" href="#"><i class="bi bi-box-arrow-right me-2"></i>Sign out</a></li>
+            </ul>
+        </div>
+    </header>
+
+    <!-- ── Main content ── -->
+    <main id="main-content">
+
+        <!-- Validation summary (global) -->
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                <i class="bi bi-exclamation-circle me-2"></i>
+                <strong>Please fix the following errors:</strong>
+                <div asp-validation-summary="All" class="mt-1 mb-0 small"></div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        <!-- Toast notifications via TempData -->
+        @if (TempData["SuccessMessage"] is string success)
+        {
+            <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                <i class="bi bi-check-circle me-2"></i> @success
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+        @if (TempData["ErrorMessage"] is string error)
+        {
+            <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                <i class="bi bi-exclamation-circle me-2"></i> @error
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        @RenderBody()
+    </main>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // ── Mobile sidebar toggle ──
+        const sidebar  = document.getElementById('sidebar');
+        const overlay  = document.getElementById('sidebar-overlay');
+        const toggle   = document.getElementById('sidebarToggle');
+
+        function openSidebar()  { sidebar.classList.add('show');  overlay.classList.add('show');  }
+        function closeSidebar() { sidebar.classList.remove('show'); overlay.classList.remove('show'); }
+
+        toggle?.addEventListener('click', () =>
+        sidebar.classList.contains('show') ? closeSidebar() : openSidebar()
+        );
+        overlay.addEventListener('click', closeSidebar);
+
+        // ── Auto-dismiss alerts after 5 s ──
+        document.querySelectorAll('.alert-dismissible').forEach(el => {
+        setTimeout(() => bootstrap.Alert.getOrCreateInstance(el)?.close(), 5000);
+        });
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+
+</body>
+</html>

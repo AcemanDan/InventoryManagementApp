@@ -1,0 +1,81 @@
+﻿@page "{id:int}"
+@model InventoryManagement.Pages.Categories.DeleteModel
+@{
+    ViewData["Title"] = "Delete Category";
+}
+
+<div class="page-header">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb small mb-1">
+                <li class="breadcrumb-item"><a asp-page="Index">Categories</a></li>
+                <li class="breadcrumb-item active">Delete</li>
+            </ol>
+        </nav>
+        <h1>Delete Category</h1>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+
+        @if (Model.ProductCount > 0)
+        {
+            <!-- Blocked: products still linked -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4 text-center">
+                    <div class="rounded-circle bg-warning bg-opacity-10 d-inline-flex align-items-center
+                        justify-content-center mb-3" style="width:64px;height:64px">
+                        <i class="bi bi-exclamation-triangle text-warning fs-3"></i>
+                    </div>
+                    <h5 class="fw-bold mb-1">Cannot delete "@Model.Category.Name"</h5>
+                    <p class="text-muted small mb-0">
+                        This category has <strong>@Model.ProductCount product@(Model.ProductCount == 1 ? "" : "s")</strong>
+                        assigned to it. Reassign or delete those products before removing this category.
+                    </p>
+                </div>
+                <div class="card-body border-top d-flex gap-2 justify-content-center pt-3 pb-4">
+                    <a asp-page="/Products/Index" asp-route-categoryId="@Model.Category.Id"
+                       class="btn btn-primary">
+                        <i class="bi bi-box-seam me-1"></i> View Products
+                    </a>
+                    <a asp-page="Index" class="btn btn-outline-secondary">Back</a>
+                </div>
+            </div>
+        }
+        else
+        {
+            <!-- Safe to delete -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4 text-center">
+                    <div class="rounded-circle bg-danger bg-opacity-10 d-inline-flex align-items-center
+                        justify-content-center mb-3" style="width:64px;height:64px">
+                        <i class="bi bi-trash text-danger fs-3"></i>
+                    </div>
+                    <h5 class="fw-bold mb-1">Delete "@Model.Category.Name"?</h5>
+                    <p class="text-muted small mb-0">
+                        This category has no products assigned. It will be permanently removed.
+                    </p>
+                </div>
+
+                @if (!string.IsNullOrEmpty(Model.Category.Description))
+                {
+                    <div class="card-body border-top border-bottom bg-light py-3 px-4 small text-muted fst-italic">
+                        "@Model.Category.Description"
+                    </div>
+                }
+
+                <div class="card-body p-4 d-flex gap-2 justify-content-center">
+                    <form method="post">
+                        <input type="hidden" asp-for="Category.Id" />
+                        <button type="submit" class="btn btn-danger px-4">
+                            <i class="bi bi-trash me-1"></i> Yes, delete it
+                        </button>
+                    </form>
+                    <a asp-page="Index" class="btn btn-outline-secondary px-4">Cancel</a>
+                </div>
+            </div>
+        }
+
+    </div>
+</div>

@@ -1,0 +1,192 @@
+@page "{id:int}"
+@model InventoryManagement.Pages.ProductPages.DetailsModel
+
+@{
+    ViewData["Title"] = Model.Product.Name;
+}
+
+<div class="page-header">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb small mb-1">
+                <li class="breadcrumb-item"><a asp-page="Index">Products</a></li>
+                <li class="breadcrumb-item active">@Model.Product.Name</li>
+            </ol>
+        </nav>
+        <h1>@Model.Product.Name</h1>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-page="Edit" asp-route-id="@Model.Product.Id" class="btn btn-primary">
+            <i class="bi bi-pencil me-1"></i> Edit
+        </a>
+        <a asp-page="Restock" asp-route-id="@Model.Product.Id" class="btn btn-outline-success">
+            <i class="bi bi-plus-lg me-1"></i> Log Stock Change
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- ── Left: product info ── -->
+    <div class="col-lg-8">
+
+        <!-- Summary cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-3">
+                <div class="card border-0 shadow-sm text-center p-3">
+                    <div class="text-muted small mb-1">Price</div>
+                    <div class="fw-bold fs-5">@Model.Product.Price.ToString("C")</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card border-0 shadow-sm text-center p-3">
+                    <div class="text-muted small mb-1">In Stock</div>
+                    <div class="fw-bold fs-5 @(Model.Product.StockQuantity == 0 ? "text-danger" : Model.Product.IsLowStock ? "text-warning" : "text-success")">
+                        @Model.Product.StockQuantity
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card border-0 shadow-sm text-center p-3">
+                    <div class="text-muted small mb-1">Threshold</div>
+                    <div class="fw-bold fs-5">@Model.Product.LowStockThreshold</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card border-0 shadow-sm text-center p-3">
+                    <div class="text-muted small mb-1">Status</div>
+                    <div>
+                        @if (!Model.Product.IsActive)
+                        {
+                            <span class="badge bg-secondary">Inactive</span>
+                        }
+                        else if (Model.Product.StockQuantity == 0)
+                        {
+                            <span class="badge bg-danger">Out of stock</span>
+                        }
+                        else if (Model.Product.IsLowStock)
+                        {
+                            <span class="badge bg-warning text-dark">Low stock</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-success">In stock</span>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Description -->
+        @if (!string.IsNullOrEmpty(Model.Product.Description))
+        {
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-transparent fw-semibold">Description</div>
+                <div class="card-body text-muted">@Model.Product.Description</div>
+            </div>
+        }
+
+        <!-- Transaction history -->
+        <div class="card border-0 shadow-sm" id="transactions">
+            <div class="card-header bg-transparent fw-semibold d-flex justify-content-between align-items-center">
+                Stock Transaction History
+                <span class="badge bg-secondary rounded-pill">@Model.Transactions.Count</span>
+            </div>
+            @if (Model.Transactions.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th class="text-end">Change</th>
+                                <th class="text-end">Stock After</th>
+                                <th>Reference</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var t in Model.Transactions)
+                            {
+                                <tr>
+                                    <td class="text-nowrap small text-muted">
+                                        @t.TransactionDate.ToString("MMM d, yyyy")
+                                    </td>
+                                    <td>
+                                        @{
+                                            var (icon, color) = t.Type switch
+                                            {
+                                                InventoryManagement.Models.TransactionType.Restock => ("bi-arrow-down-circle-fill", "text-success"),
+                                                InventoryManagement.Models.TransactionType.Sale => ("bi-arrow-up-circle-fill", "text-danger"),
+                                                InventoryManagement.Models.TransactionType.Return => ("bi-arrow-counterclockwise", "text-info"),
+                                                _ => ("bi-sliders", "text-secondary")
+                                            };
+                                        }
+                                        <i class="bi @icon @color me-1"></i>
+                                        <span class="small">@t.Type</span>
+                                    </td>
+                                    <td class="text-end fw-semibold @(t.QuantityChange >= 0 ? "text-success" : "text-danger")">
+                                        @(t.QuantityChange >= 0 ? "+" : "")@t.QuantityChange
+                                    </td>
+                                    <td class="text-end">@t.StockAfter</td>
+                                    <td class="small text-muted">@(t.Reference ?? "—")</td>
+                                    <td class="small text-muted">@(t.Notes ?? "—")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="card-body text-center text-muted py-4 small">
+                    No transactions recorded yet.
+                    <a asp-page="Restock" asp-route-id="@Model.Product.Id">Log the first one.</a>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- ── Right: metadata ── -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-header bg-transparent fw-semibold">Details</div>
+            <div class="card-body small">
+                <div class="d-flex justify-content-between py-2 border-bottom">
+                    <span class="text-muted">SKU</span>
+                    <code>@(Model.Product.SKU ?? "—")</code>
+                </div>
+                <div class="d-flex justify-content-between py-2 border-bottom">
+                    <span class="text-muted">Category</span>
+                    <span>
+                        <a asp-page="/Categories/Index">@Model.Product.Category.Name</a>
+                    </span>
+                </div>
+                <div class="d-flex justify-content-between py-2 border-bottom">
+                    <span class="text-muted">Supplier</span>
+                    <span>@(Model.Product.Supplier?.Name ?? "—")</span>
+                </div>
+                <div class="d-flex justify-content-between py-2 border-bottom">
+                    <span class="text-muted">Date Added</span>
+                    <span>@Model.Product.DateAdded.ToString("MMM d, yyyy")</span>
+                </div>
+                <div class="d-flex justify-content-between py-2">
+                    <span class="text-muted">Last Updated</span>
+                    <span>@Model.Product.LastUpdated.ToString("MMM d, yyyy")</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-grid gap-2">
+            <a asp-page="Edit" asp-route-id="@Model.Product.Id" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-pencil me-1"></i> Edit Product
+            </a>
+            <a asp-page="Restock" asp-route-id="@Model.Product.Id" class="btn btn-outline-success btn-sm">
+                <i class="bi bi-plus-lg me-1"></i> Log Stock Change
+            </a>
+            <a asp-page="Delete" asp-route-id="@Model.Product.Id" class="btn btn-outline-danger btn-sm">
+                <i class="bi bi-trash me-1"></i> Delete Product
+            </a>
+        </div>
+    </div>
+</div>

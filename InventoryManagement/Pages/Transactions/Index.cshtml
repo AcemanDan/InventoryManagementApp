@@ -1,0 +1,205 @@
+﻿@page
+@model InventoryManagement.Pages.Transactions.IndexModel
+@{
+    ViewData["Title"] = "Stock Transactions";
+}
+
+<div class="page-header">
+    <h1><i class="bi bi-arrow-left-right me-2 text-primary"></i>Stock Transactions</h1>
+</div>
+
+<!-- ── Filters ── -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body py-3">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-12 col-md-3">
+                <label class="form-label small text-muted mb-1">Search Product</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0">
+                        <i class="bi bi-search text-muted"></i>
+                    </span>
+                    <input type="search" name="search" value="@Model.Search"
+                           class="form-control border-start-0 bg-light"
+                           placeholder="Product name or SKU…" />
+                </div>
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label small text-muted mb-1">Type</label>
+                <select name="typeFilter" class="form-select bg-light">
+                    <option value="">All types</option>
+                    <option value="Restock" selected="@(Model.TypeFilter == "Restock")">Restock</option>
+                    <option value="Sale" selected="@(Model.TypeFilter == "Sale")">Sale</option>
+                    <option value="Adjustment" selected="@(Model.TypeFilter == "Adjustment")">Adjustment</option>
+                    <option value="Return" selected="@(Model.TypeFilter == "Return")">Return</option>
+                </select>
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label small text-muted mb-1">From</label>
+                <input type="date" name="dateFrom" value="@Model.DateFrom?.ToString("yyyy-MM-dd")"
+                       class="form-control bg-light" />
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label small text-muted mb-1">To</label>
+                <input type="date" name="dateTo" value="@Model.DateTo?.ToString("yyyy-MM-dd")"
+                       class="form-control bg-light" />
+            </div>
+            <div class="col-6 col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary w-100">Filter</button>
+                <a asp-page="Index" class="btn btn-outline-secondary" title="Clear filters">
+                    <i class="bi bi-x-lg"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ── Summary strip ── -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <div class="text-muted small mb-1">Total Transactions</div>
+            <div class="fw-bold fs-5">@Model.TotalCount</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <div class="text-muted small mb-1">Units Added</div>
+            <div class="fw-bold fs-5 text-success">+@Model.TotalAdded</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <div class="text-muted small mb-1">Units Removed</div>
+            <div class="fw-bold fs-5 text-danger">@Model.TotalRemoved</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <div class="text-muted small mb-1">Net Change</div>
+            @{
+                var net = Model.TotalAdded + Model.TotalRemoved;
+            }
+            <div class="fw-bold fs-5 @(net >= 0 ? "text-success" : "text-danger")">
+                @(net >= 0 ? "+" : "")@net
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Table ── -->
+@if (Model.Transactions.Any())
+{
+    <div class="card border-0 shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date</th>
+                        <th>Product</th>
+                        <th>Type</th>
+                        <th class="text-end">Change</th>
+                        <th class="text-end">Stock After</th>
+                        <th>Reference</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var t in Model.Transactions)
+                    {
+                        <tr>
+                            <td class="text-nowrap small text-muted">
+                                @t.TransactionDate.ToString("MMM d, yyyy")
+                                <div class="text-muted" style="font-size:.7rem">
+                                    @t.TransactionDate.ToString("h:mm tt")
+                                </div>
+                            </td>
+                            <td>
+                                <a asp-page="/ProductPages/Details"
+                                   asp-route-id="@t.Product.Id"
+                                   class="fw-semibold text-decoration-none text-dark">
+                                    @t.Product.Name
+                                </a>
+                                @if (!string.IsNullOrEmpty(t.Product.SKU))
+                                {
+                                    <div><code class="small">@t.Product.SKU</code></div>
+                                }
+                            </td>
+                            <td>
+                                @{
+                                    var (icon, badgeClass) = t.Type switch
+                                    {
+                                        InventoryManagement.Models.TransactionType.Restock => ("bi-arrow-down-circle-fill", "bg-success"),
+                                        InventoryManagement.Models.TransactionType.Sale => ("bi-arrow-up-circle-fill", "bg-danger"),
+                                        InventoryManagement.Models.TransactionType.Return => ("bi-arrow-counterclockwise", "bg-info"),
+                                        _ => ("bi-sliders", "bg-secondary")
+                                    };
+                                }
+                                <span class="badge @badgeClass">
+                                    <i class="bi @icon me-1"></i>@t.Type
+                                </span>
+                            </td>
+                            <td class="text-end fw-bold @(t.QuantityChange >= 0 ? "text-success" : "text-danger")">
+                                @(t.QuantityChange >= 0 ? "+" : "")@t.QuantityChange
+                            </td>
+                            <td class="text-end">@t.StockAfter</td>
+                            <td class="small text-muted">@(t.Reference ?? "—")</td>
+                            <td class="small text-muted" style="max-width:200px">
+                                <span class="text-truncate d-block">@(t.Notes ?? "—")</span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ── Pagination ── -->
+    @if (Model.TotalPages > 1)
+    {
+        <nav class="mt-4 d-flex justify-content-center" aria-label="Transactions pagination">
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item @(Model.CurrentPage == 1 ? "disabled" : "")">
+                    <a class="page-link" asp-page="Index"
+                       asp-route-page="@(Model.CurrentPage - 1)"
+                       asp-route-search="@Model.Search"
+                       asp-route-typeFilter="@Model.TypeFilter"
+                       asp-route-dateFrom="@Model.DateFrom?.ToString("yyyy-MM-dd")"
+                       asp-route-dateTo="@Model.DateTo?.ToString("yyyy-MM-dd")">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+                @for (var i = 1; i <= Model.TotalPages; i++)
+                {
+                    <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                        <a class="page-link" asp-page="Index"
+                           asp-route-page="@i"
+                           asp-route-search="@Model.Search"
+                           asp-route-typeFilter="@Model.TypeFilter"
+                           asp-route-dateFrom="@Model.DateFrom?.ToString("yyyy-MM-dd")"
+                           asp-route-dateTo="@Model.DateTo?.ToString("yyyy-MM-dd")">@i</a>
+                    </li>
+                }
+                <li class="page-item @(Model.CurrentPage == Model.TotalPages ? "disabled" : "")">
+                    <a class="page-link" asp-page="Index"
+                       asp-route-page="@(Model.CurrentPage + 1)"
+                       asp-route-search="@Model.Search"
+                       asp-route-typeFilter="@Model.TypeFilter"
+                       asp-route-dateFrom="@Model.DateFrom?.ToString("yyyy-MM-dd")"
+                       asp-route-dateTo="@Model.DateTo?.ToString("yyyy-MM-dd")">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    }
+}
+else
+{
+    <div class="card border-0 shadow-sm">
+        <div class="card-body text-center py-5 text-muted">
+            <i class="bi bi-arrow-left-right display-4 d-block mb-3 opacity-25"></i>
+            <p class="fw-semibold mb-1">No transactions found</p>
+            <p class="small mb-0">Try adjusting your filters, or log a stock change from a product page.</p>
+        </div>
+    </div>
+}

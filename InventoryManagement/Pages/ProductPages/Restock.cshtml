@@ -1,0 +1,119 @@
+﻿@page "{id:int}"
+@model InventoryManagement.Pages.ProductPages.RestockModel
+@{
+    ViewData["Title"] = "Log Stock Change";
+}
+
+<div class="page-header">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb small mb-1">
+                <li class="breadcrumb-item"><a asp-page="Index">Products</a></li>
+                <li class="breadcrumb-item">
+                    <a asp-page="Details" asp-route-id="@Model.Product.Id">@Model.Product.Name</a>
+                </li>
+                <li class="breadcrumb-item active">Log Stock Change</li>
+            </ol>
+        </nav>
+        <h1>Log Stock Change</h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-6">
+
+        <!-- Current stock callout -->
+        <div class="alert @(Model.Product.IsLowStock ? "alert-warning" : "alert-info") d-flex align-items-center gap-3 mb-4">
+            <i class="bi bi-box-seam fs-4 flex-shrink-0"></i>
+            <div>
+                <strong>@Model.Product.Name</strong>
+                <div class="small">
+                    Current stock: <strong>@Model.Product.StockQuantity units</strong>
+                    @if (Model.Product.IsLowStock)
+                    {
+                        <span class="ms-2 badge bg-warning text-dark">Low stock</span>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <form method="post">
+            <input type="hidden" asp-for="Transaction.ProductId" />
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger small mb-4"></div>
+
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-transparent fw-semibold">Transaction Details</div>
+                <div class="card-body">
+
+                    <!-- Type -->
+                    <div class="mb-3">
+                        <label asp-for="Transaction.Type" class="form-label"></label>
+                        <select asp-for="Transaction.Type" class="form-select"
+                                asp-items="Html.GetEnumSelectList<InventoryManagement.Models.TransactionType>()">
+                        </select>
+                        <span asp-validation-for="Transaction.Type" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Quantity -->
+                    <div class="mb-3">
+                        <label asp-for="Transaction.QuantityChange" class="form-label"></label>
+                        <div class="input-group">
+                            <input asp-for="Transaction.QuantityChange" class="form-control"
+                                   type="number" id="qtyInput" />
+                            <span class="input-group-text">units</span>
+                        </div>
+                        <div class="form-text">
+                            Use a positive number to add stock (e.g. restock), negative to remove (e.g. sale).
+                        </div>
+                        <span asp-validation-for="Transaction.QuantityChange" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Preview -->
+                    <div class="alert alert-light border mb-3 small" id="stockPreview">
+                        New stock level: <strong id="previewValue">@Model.Product.StockQuantity</strong>
+                    </div>
+
+                    <!-- Reference -->
+                    <div class="mb-3">
+                        <label asp-for="Transaction.Reference" class="form-label"></label>
+                        <input asp-for="Transaction.Reference" class="form-control"
+                               placeholder="e.g. PO-2024-001" />
+                        <span asp-validation-for="Transaction.Reference" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Notes -->
+                    <div>
+                        <label asp-for="Transaction.Notes" class="form-label"></label>
+                        <textarea asp-for="Transaction.Notes" class="form-control" rows="2"
+                                  placeholder="Optional notes…"></textarea>
+                        <span asp-validation-for="Transaction.Notes" class="text-danger small"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-success">
+                    <i class="bi bi-check-lg me-1"></i> Save Transaction
+                </button>
+                <a asp-page="Details" asp-route-id="@Model.Product.Id"
+                   class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        const current = @Model.Product.StockQuantity;
+        const input   = document.getElementById('qtyInput');
+        const preview = document.getElementById('previewValue');
+
+        input?.addEventListener('input', () => {
+            const val    = parseInt(input.value) || 0;
+            const newQty = current + val;
+            preview.textContent = newQty < 0 ? '0 (cannot go below zero)' : newQty;
+            preview.className   = newQty <= 0 ? 'text-danger fw-bold' : 'fw-bold';
+        });
+    </script>
+}

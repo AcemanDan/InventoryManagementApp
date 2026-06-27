@@ -1,0 +1,288 @@
+﻿@page
+@model InventoryManagement.Pages.Reports.IndexModel
+@{
+    ViewData["Title"] = "Reports";
+}
+
+<div class="page-header">
+    <h1><i class="bi bi-bar-chart-line me-2 text-primary"></i>Reports</h1>
+    <!-- Date range filter -->
+    <form method="get" class="d-flex align-items-center gap-2">
+        <label class="small text-muted mb-0">From</label>
+        <input type="date" name="dateFrom" value="@Model.DateFrom.ToString("yyyy-MM-dd")"
+               class="form-control form-control-sm bg-light" style="width:145px" />
+        <label class="small text-muted mb-0">To</label>
+        <input type="date" name="dateTo" value="@Model.DateTo.ToString("yyyy-MM-dd")"
+               class="form-control form-control-sm bg-light" style="width:145px" />
+        <button type="submit" class="btn btn-primary btn-sm">Apply</button>
+        <a asp-page="Index" class="btn btn-outline-secondary btn-sm" title="Reset">
+            <i class="bi bi-x-lg"></i>
+        </a>
+    </form>
+</div>
+
+<!-- ── KPI strip ─────────────────────────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-xl-3">
+        <div class="card border-0 shadow-sm p-3">
+            <div class="small text-muted mb-1">Inventory Value</div>
+            <div class="fw-bold fs-4">@Model.InventoryValue.ToString("C")</div>
+            <div class="small text-muted">at current stock × price</div>
+        </div>
+    </div>
+    <div class="col-6 col-xl-3">
+        <div class="card border-0 shadow-sm p-3">
+            <div class="small text-muted mb-1">Units Sold <span class="text-muted fw-normal">(period)</span></div>
+            <div class="fw-bold fs-4 text-danger">@Model.UnitsSold</div>
+            <div class="small text-muted">@Model.DateFrom.ToString("MMM d") — @Model.DateTo.ToString("MMM d, yyyy")</div>
+        </div>
+    </div>
+    <div class="col-6 col-xl-3">
+        <div class="card border-0 shadow-sm p-3">
+            <div class="small text-muted mb-1">Units Restocked <span class="text-muted fw-normal">(period)</span></div>
+            <div class="fw-bold fs-4 text-success">@Model.UnitsRestocked</div>
+            <div class="small text-muted">@Model.DateFrom.ToString("MMM d") — @Model.DateTo.ToString("MMM d, yyyy")</div>
+        </div>
+    </div>
+    <div class="col-6 col-xl-3">
+        <div class="card border-0 shadow-sm p-3">
+            <div class="small text-muted mb-1">Low Stock Items</div>
+            <div class="fw-bold fs-4 text-warning">@Model.LowStockCount</div>
+            <div class="small text-muted">at or below threshold</div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Row 1: Transaction Activity + Type Breakdown ──────────────────────── -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-transparent fw-semibold">
+                Stock Activity Over Time
+                <span class="text-muted fw-normal small ms-1">(units in / out per week)</span>
+            </div>
+            <div class="card-body">
+                <canvas id="activityChart" height="220"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-transparent fw-semibold">Transaction Types</div>
+            <div class="card-body d-flex align-items-center justify-content-center">
+                <canvas id="typeChart" height="220"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Row 2: Inventory Value by Category + Top 5 Products ───────────────── -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-transparent fw-semibold">Inventory Value by Category</div>
+            <div class="card-body">
+                <canvas id="valueChart" height="240"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-transparent fw-semibold">Top 5 Products by Inventory Value</div>
+            <div class="card-body">
+                <canvas id="topProductsChart" height="240"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Row 3: Low Stock Table ─────────────────────────────────────────────── -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-transparent fw-semibold d-flex justify-content-between align-items-center">
+        Low Stock Report
+        <span class="badge bg-warning text-dark rounded-pill">@Model.LowStockProducts.Count items</span>
+    </div>
+    @if (Model.LowStockProducts.Any())
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 small">
+                <thead class="table-light">
+                    <tr>
+                        <th>Product</th>
+                        <th>Category</th>
+                        <th>Supplier</th>
+                        <th class="text-end">In Stock</th>
+                        <th class="text-end">Threshold</th>
+                        <th class="text-end">Deficit</th>
+                        <th class="text-end">Restock Value</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in Model.LowStockProducts)
+                    {
+                        var deficit = p.LowStockThreshold - p.StockQuantity;
+                        <tr>
+                            <td class="fw-semibold">@p.Name</td>
+                            <td>
+                                <span class="badge rounded-pill bg-primary bg-opacity-10 text-primary">
+                                    @p.Category.Name
+                                </span>
+                            </td>
+                            <td class="text-muted">@(p.Supplier?.Name ?? "—")</td>
+                            <td class="text-end @(p.StockQuantity == 0 ? "text-danger fw-bold" : "text-warning fw-bold")">
+                                @p.StockQuantity
+                            </td>
+                            <td class="text-end text-muted">@p.LowStockThreshold</td>
+                            <td class="text-end text-danger fw-semibold">@deficit</td>
+                            <td class="text-end">@((deficit * p.Price).ToString("C"))</td>
+                            <td>
+                                <a asp-page="/ProductPages/Restock" asp-route-id="@p.Id"
+                                   class="btn btn-sm btn-outline-success">
+                                    <i class="bi bi-plus-lg"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="card-body text-center py-4 text-muted small">
+            <i class="bi bi-check-circle text-success fs-4 d-block mb-2"></i>
+            All products are above their low stock thresholds.
+        </div>
+    }
+</div>
+
+<!-- ── Row 4: Transaction log for period ─────────────────────────────────── -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-transparent fw-semibold d-flex justify-content-between align-items-center">
+        Most Active Products
+        <span class="text-muted small fw-normal">by transaction count in period</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 small">
+            <thead class="table-light">
+                <tr>
+                    <th>Product</th>
+                    <th class="text-end">Transactions</th>
+                    <th class="text-end">Units In</th>
+                    <th class="text-end">Units Out</th>
+                    <th class="text-end">Net Change</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var r in Model.ProductActivity)
+                {
+                    <tr>
+                        <td class="fw-semibold">
+                            <a asp-page="/ProductPages/Details" asp-route-id="@r.ProductId"
+                               class="text-decoration-none text-dark">@r.ProductName</a>
+                        </td>
+                        <td class="text-end">@r.TransactionCount</td>
+                        <td class="text-end text-success">+@r.UnitsIn</td>
+                        <td class="text-end text-danger">@r.UnitsOut</td>
+                        <td class="text-end fw-semibold @(r.NetChange >= 0 ? "text-success" : "text-danger")">
+                            @(r.NetChange >= 0 ? "+" : "")@r.NetChange
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <script>
+        const palette = ['#0d6efd','#198754','#ffc107','#0dcaf0','#6610f2','#fd7e14','#d63384'];
+
+        // ── Activity line chart ───────────────────────────────────────────────────
+        new Chart(document.getElementById('activityChart'), {
+        type: 'bar',
+        data: {
+        labels:   @Html.Raw(Model.ActivityLabelsJson),
+        datasets: [
+        {
+        label: 'Units In',
+        data: @Html.Raw(Model.ActivityInJson),
+        backgroundColor: 'rgba(25,135,84,.7)',
+        borderRadius: 4,
+        borderSkipped: false
+        },
+        {
+        label: 'Units Out',
+        data: @Html.Raw(Model.ActivityOutJson),
+        backgroundColor: 'rgba(220,53,69,.7)',
+        borderRadius: 4,
+        borderSkipped: false
+        }
+        ]
+        },
+        options: {
+        responsive: true,
+        plugins: { legend: { position: 'top' } },
+        scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+        }
+        });
+
+        // ── Type doughnut ─────────────────────────────────────────────────────────
+        new Chart(document.getElementById('typeChart'), {
+        type: 'doughnut',
+        data: {
+        labels:   @Html.Raw(Model.TypeLabelsJson),
+        datasets: [{ data: @Html.Raw(Model.TypeCountsJson), backgroundColor: palette, hoverOffset: 8 }]
+        },
+        options: {
+        responsive: true,
+        plugins: { legend: { position: 'bottom' } },
+        cutout: '60%'
+        }
+        });
+
+        // ── Value by category bar ─────────────────────────────────────────────────
+        new Chart(document.getElementById('valueChart'), {
+        type: 'bar',
+        data: {
+        labels: @Html.Raw(Model.CategoryLabelsJson),
+        datasets: [{
+        label: 'Inventory Value ($)',
+        data: @Html.Raw(Model.CategoryValuesJson),
+        backgroundColor: palette,
+        borderRadius: 6,
+        borderSkipped: false
+        }]
+        },
+        options: {
+        indexAxis: 'y',
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true, ticks: { callback: v => '$' + v.toLocaleString() } } }
+        }
+        });
+
+        // ── Top 5 products horizontal bar ─────────────────────────────────────────
+        new Chart(document.getElementById('topProductsChart'), {
+        type: 'bar',
+        data: {
+        labels: @Html.Raw(Model.TopProductLabelsJson),
+        datasets: [{
+        label: 'Value ($)',
+        data: @Html.Raw(Model.TopProductValuesJson),
+        backgroundColor: '#0d6efd',
+        borderRadius: 6,
+        borderSkipped: false
+        }]
+        },
+        options: {
+        indexAxis: 'y',
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true, ticks: { callback: v => '$' + v.toLocaleString() } } }
+        }
+        });
+    </script>
+}

@@ -1,0 +1,110 @@
+﻿@page "{id:int}"
+@model InventoryManagement.Pages.Suppliers.EditModel
+@{
+    ViewData["Title"] = $"Edit — {Model.Supplier.Name}";
+}
+
+<div class="page-header">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb small mb-1">
+                <li class="breadcrumb-item"><a asp-page="Index">Suppliers</a></li>
+                <li class="breadcrumb-item active">Edit</li>
+            </ol>
+        </nav>
+        <h1>Edit Supplier</h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-6">
+        <form method="post">
+            <input type="hidden" asp-for="Supplier.Id" />
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger small mb-4"></div>
+
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-transparent fw-semibold">Supplier Details</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label asp-for="Supplier.Name" class="form-label"></label>
+                        <input asp-for="Supplier.Name" class="form-control" />
+                        <span asp-validation-for="Supplier.Name" class="text-danger small"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Supplier.Email" class="form-label"></label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                            <input asp-for="Supplier.Email" class="form-control" />
+                        </div>
+                        <span asp-validation-for="Supplier.Email" class="text-danger small"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Supplier.Phone" class="form-label"></label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-telephone"></i></span>
+                            <input asp-for="Supplier.Phone" class="form-control" />
+                        </div>
+                        <span asp-validation-for="Supplier.Phone" class="text-danger small"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Supplier.Address" class="form-label"></label>
+                        <textarea asp-for="Supplier.Address" class="form-control" rows="2"></textarea>
+                        <span asp-validation-for="Supplier.Address" class="text-danger small"></span>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input asp-for="Supplier.IsActive" class="form-check-input"
+                               type="checkbox" role="switch" />
+                        <label asp-for="Supplier.IsActive" class="form-check-label">Active</label>
+                    </div>
+                </div>
+            </div>
+
+            @if (Model.ProductCount > 0)
+            {
+                <div class="alert alert-info small mb-4">
+                    <i class="bi bi-info-circle me-1"></i>
+                    This supplier has <strong>@Model.ProductCount product@(Model.ProductCount == 1 ? "" : "s")</strong> assigned.
+                    Setting it to <strong>Inactive</strong> will hide it from the supplier dropdown when adding or editing products.
+                </div>
+            }
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-lg me-1"></i> Save Changes
+                </button>
+                <a asp-page="Index" class="btn btn-outline-secondary">Cancel</a>
+                @if (Model.ProductCount == 0)
+                {
+                    <a asp-page="Delete" asp-route-id="@Model.Supplier.Id"
+                       class="btn btn-outline-danger ms-auto">
+                        <i class="bi bi-trash me-1"></i> Delete
+                    </a>
+                }
+            </div>
+        </form>
+    </div>
+
+    <!-- Meta sidebar -->
+    <div class="col-lg-4 mt-4 mt-lg-0">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent fw-semibold">Quick Links</div>
+            <div class="card-body small p-0">
+                <a asp-page="/ProductPages/Index" asp-route-supplierId="@Model.Supplier.Id"
+                   class="d-flex align-items-center gap-2 px-3 py-2 text-decoration-none
+                    text-dark border-bottom hover-bg">
+                    <i class="bi bi-box-seam text-primary"></i>
+                    View @Model.ProductCount product@(Model.ProductCount == 1 ? "" : "s") from this supplier
+                </a>
+                <a href="mailto:@Model.Supplier.Email"
+                   class="d-flex align-items-center gap-2 px-3 py-2 text-decoration-none text-dark @(string.IsNullOrEmpty(Model.Supplier.Email) ? "text-muted pe-none" : "")">
+                    <i class="bi bi-envelope text-primary"></i>
+                    @(string.IsNullOrEmpty(Model.Supplier.Email) ? "No email on file" : "Send email")
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
